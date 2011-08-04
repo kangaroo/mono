@@ -1047,7 +1047,7 @@ if test x$target_win32 = xno; then
 	AC_CHECK_FUNCS(getpwuid_r)
 	AC_CHECK_FUNCS(getresuid)
 	AC_CHECK_FUNCS(setresuid)
-	AC_CHECK_FUNCS(kqueue)
+dnl	AC_CHECK_FUNCS(kqueue)
 	AC_CHECK_FUNCS(backtrace_symbols)
 	AC_CHECK_FUNCS(mkstemp)
 	AC_CHECK_FUNCS(mmap)
@@ -1620,11 +1620,11 @@ if test x$target_win32 = xno; then
 	fi
 
 	havekqueue=no
-        AC_CHECK_FUNCS(kqueue, , AC_MSG_CHECKING(for kqueue in sys/event.h)
-                AC_TRY_LINK([#include <sys/event.h>], 
-                [ kqueue(); ], 
-                AC_DEFINE(HAVE_KQUEUE, 1, [Have kqueue]) AC_MSG_RESULT(yes),
-                AC_MSG_RESULT(no)))
+dnl        AC_CHECK_FUNCS(kqueue, , AC_MSG_CHECKING(for kqueue in sys/event.h)
+dnl                AC_TRY_LINK([#include <sys/event.h>], 
+dnl                [ kqueue(); ], 
+dnl                AC_DEFINE(HAVE_KQUEUE, 1, [Have kqueue]) AC_MSG_RESULT(yes),
+dnl                AC_MSG_RESULT(no)))
 	dnl ******************************
 	dnl *** Checks for SIOCGIFCONF ***
 	dnl ******************************
