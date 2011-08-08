@@ -489,6 +489,10 @@ public partial      class CryptoConfig {
 			if (algo == null)
 				algo = name;
 			algoClass = Type.GetType (algo);
+
+			if (algoClass == null)
+				return null;
+
 			// call the constructor for the type
 			return Activator.CreateInstance (algoClass, args);
 		}
