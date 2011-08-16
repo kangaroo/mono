@@ -185,6 +185,7 @@ typedef struct MonoAotCompile {
 	MonoClass **typespec_classes;
 	GString *llc_args;
 	GString *as_args;
+	char *assembly_name_sym;
 	gboolean thumb_mixed, need_no_dead_strip, need_pt_gnu_stack;
 } MonoAotCompile;
 
@@ -3226,20 +3227,20 @@ add_generic_instances (MonoAotCompile *acfg)
 			}
 		}
 
-		/* Same for CompareExchange<T> */
+		/* Same for CompareExchange<T>/Exchange<T> */
 		{
 			MonoGenericContext ctx;
 			MonoType *args [16];
-			MonoMethod *cas_method;
+			MonoMethod *m;
 			MonoClass *interlocked_klass = mono_class_from_name (mono_defaults.corlib, "System.Threading", "Interlocked");
 			gpointer iter = NULL;
 
-			while ((cas_method = mono_class_get_methods (interlocked_klass, &iter))) {
-				if (!strcmp (cas_method->name, "CompareExchange") && cas_method->is_generic) {
+			while ((m = mono_class_get_methods (interlocked_klass, &iter))) {
+				if ((!strcmp (m->name, "CompareExchange") || !strcmp (m->name, "Exchange")) && m->is_generic) {
 					memset (&ctx, 0, sizeof (ctx));
 					args [0] = &mono_defaults.object_class->byval_arg;
 					ctx.method_inst = mono_metadata_get_generic_inst (1, args);
-					add_extra_method (acfg, mono_marshal_get_native_wrapper (mono_class_inflate_generic_method (cas_method, &ctx), TRUE, TRUE));
+					add_extra_method (acfg, mono_marshal_get_native_wrapper (mono_class_inflate_generic_method (m, &ctx), TRUE, TRUE));
 				}
 			}
 		}
@@ -5129,7 +5130,7 @@ mono_aot_get_method_name (MonoCompile *cfg)
 {
 	if (llvm_acfg->aot_opts.static_link)
 		/* Include the assembly name too to avoid duplicate symbol errors */
-		return g_strdup_printf ("%s_%s", llvm_acfg->image->assembly->aname.name, get_debug_sym (cfg->orig_method, "", llvm_acfg->method_label_hash));
+		return g_strdup_printf ("%s_%s", llvm_acfg->assembly_name_sym, get_debug_sym (cfg->orig_method, "", llvm_acfg->method_label_hash));
 	else
 		return get_debug_sym (cfg->orig_method, "", llvm_acfg->method_label_hash);
 }
@@ -6842,6 +6843,7 @@ mono_compile_assembly (MonoAssembly *ass, guint32 opts, const char *aot_options)
 
 	acfg->got_symbol_base = g_strdup_printf ("mono_aot_%s_got", acfg->image->assembly->aname.name);
 	acfg->plt_symbol = g_strdup_printf ("%smono_aot_%s_plt", acfg->llvm_label_prefix, acfg->image->assembly->aname.name);
+	acfg->assembly_name_sym = g_strdup (acfg->image->assembly->aname.name);
 
 	/* Get rid of characters which cannot occur in symbols */
 	for (p = acfg->got_symbol_base; *p; ++p) {
@@ -6849,6 +6851,10 @@ mono_compile_assembly (MonoAssembly *ass, guint32 opts, const char *aot_options)
 			*p = '_';
 	}
 	for (p = acfg->plt_symbol; *p; ++p) {
+		if (!(isalnum (*p) || *p == '_'))
+			*p = '_';
+	}
+	for (p = acfg->assembly_name_sym; *p; ++p) {
 		if (!(isalnum (*p) || *p == '_'))
 			*p = '_';
 	}
