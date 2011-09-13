@@ -7,6 +7,7 @@
  *
  * Copyright 2001-2003 Ximian, Inc (http://www.ximian.com)
  * Copyright 2004-2010 Novell, Inc (http://www.novell.com)
+ * Copyright 2001 Xamarin Inc (http://www.xamarin.com)
  */
 
 #include <config.h>
@@ -480,8 +481,14 @@ static void
 init_event_system (SocketIOData *data)
 {
 #ifdef HAVE_EPOLL
-	if (data->event_system == EPOLL_BACKEND)
+	if (data->event_system == EPOLL_BACKEND) {
 		data->event_data = tp_epoll_init (data);
+		if (data->event_data == NULL) {
+			if (g_getenv ("MONO_DEBUG"))
+				g_message ("Falling back to poll()");
+			data->event_system = POLL_BACKEND;
+		}
+	}
 #elif defined(HAVE_KQUEUE)
 	if (data->event_system == KQUEUE_BACKEND)
 		data->event_data = tp_kqueue_init (data);

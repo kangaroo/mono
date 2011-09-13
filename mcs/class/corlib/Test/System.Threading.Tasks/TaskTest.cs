@@ -1,4 +1,4 @@
-#if NET_4_0
+//
 // TaskTest.cs
 //
 // Copyright (c) 2008 Jérémie "Garuma" Laval
@@ -22,6 +22,8 @@
 // THE SOFTWARE.
 //
 //
+
+#if NET_4_0
 
 using System;
 using System.Threading;
@@ -287,6 +289,17 @@ namespace MonoTests.System.Threading.Tasks
 		}
 
 		[Test]
+		public void RunSynchronouslyArgumentChecks ()
+		{
+			Task t = new Task (() => { });
+			try {
+				t.RunSynchronously (null);
+				Assert.Fail ("#1");
+			} catch (ArgumentNullException) {
+			}
+		}
+
+		[Test]
 		public void UnobservedExceptionOnFinalizerThreadTest ()
 		{
 			bool wasCalled = false;
@@ -311,6 +324,25 @@ namespace MonoTests.System.Threading.Tasks
 			t.Wait ();
 
 			t.Start ();
+		}
+
+		[Test, ExpectedException (typeof (InvalidOperationException))]
+		public void DisposeUnstartedTest ()
+		{
+			var t = new Task (() => { });
+			t.Dispose ();
+		}
+
+		[Test]
+		public void ThrowingUnrelatedCanceledExceptionTest ()
+		{
+			Task t = new Task (() => {
+				throw new TaskCanceledException ();
+			});
+
+			t.RunSynchronously ();
+			Assert.IsTrue (t.IsFaulted);
+			Assert.IsFalse (t.IsCanceled);
 		}
 	}
 }
